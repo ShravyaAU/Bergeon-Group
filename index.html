@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bergeon Group | Screen Tracker</title>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <script src="https://unpkg.com/quagga@0.12.1/dist/quagga.min.js" type="text/javascript"></script>
     <style>
         :root {
             --asu-gold: #FFC627; --black: #000000; --cream: #FDFCE9; 
@@ -31,8 +32,9 @@
         .section-header { background-color: var(--black); color: var(--white); padding: 10px 15px; font-size: 0.9rem; font-weight: 700; text-transform: uppercase; display: flex; justify-content: space-between; }
         .scanner-container { padding: 20px; border-bottom: 2px solid var(--black); }
         
-        #reader { width: 100%; border: 2px solid var(--black); background-color: var(--black); margin-bottom: 15px; border-radius: 0; display: none; }
-        #reader video { object-fit: cover; }
+        #reader { width: 100%; border: 2px solid var(--black); background-color: var(--black); margin-bottom: 15px; border-radius: 0; display: none; position: relative; }
+        #reader video { object-fit: cover; width: 100%; height: auto; }
+        #reader canvas.drawingBuffer { position: absolute; top: 0; left: 0; }
 
         .input-group { margin-bottom: 15px; }
         .input-group label { display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 5px; }
@@ -192,7 +194,8 @@
         let currentRating = 1;
         let isScannerLocked = false;
         let html5QrCode = null;
-        let isCameraRunning = false; 
+        let isCameraRunning = false;
+        let quaggaInitialized = false; 
 
         document.addEventListener("DOMContentLoaded", () => {
             fetchLogs();
@@ -270,35 +273,53 @@
         }
 
         function initScanner() {
-            html5QrCode = new Html5Qrcode("reader");
-            
-            // Simplified camera config for better compatibility
-            const cameraConfig = { 
-                facingMode: "environment"
-            };
-
-            const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-
-            html5QrCode.start(
-                cameraConfig, 
-                config,
-                (decodedText) => { if (!isScannerLocked) onScanSuccess(decodedText); },
-                (errorMessage) => {}
-            ).then(() => {
+            // Use Quagga for better linear barcode support (UPC, EAN, Code128, etc.)
+            Quagga.init({
+                inputStream: {
+                    name: "Live",
+                    type: "LiveStream",
+                    target: document.querySelector('#reader'),
+                    constraints: {
+                        facingMode: "environment",
+                        width: 640,
+                        height: 480
+                    }
+                },
+                decoder: {
+                    readers: [
+                        "ean_reader",
+                        "ean_8_reader",
+                        "upc_reader",
+                        "code_128_reader",
+                        "code_39_reader"
+                    ]
+                },
+                locate: true
+            }, function(err) {
+                if (err) {
+                    console.error("Quagga init error:", err);
+                    document.getElementById('reader').innerHTML = `
+                        <p style="color:white; padding:20px; text-align:center; font-size:14px;">
+                            Camera error: ${err}<br><br>
+                            Please ensure:<br>
+                            1. Camera permissions are allowed<br>
+                            2. You're using HTTPS or localhost<br>
+                            3. Camera is not in use by another app
+                        </p>`;
+                    return;
+                }
+                console.log("Initialization finished. Ready to start");
+                Quagga.start();
                 isCameraRunning = true;
-                console.log("Camera started successfully");
-            }).catch(err => {
-                console.error("Camera error:", err);
-                const errorMsg = err?.message || err || "Unknown error";
-                document.getElementById('reader').innerHTML = `
-                    <p style="color:white; padding:20px; text-align:center; font-size:14px;">
-                        Camera error: ${errorMsg}<br><br>
-                        Please ensure:<br>
-                        1. Camera permissions are allowed<br>
-                        2. You're using HTTPS or localhost<br>
-                        3. Camera is not in use by another app
-                    </p>`;
-                isCameraRunning = false;
+                quaggaInitialized = true;
+            });
+
+            Quagga.onDetected(function(result) {
+                const code = result.codeResult.code;
+                console.log("Barcode detected:", code);
+                if (!isScannerLocked) {
+                    onScanSuccess(code);
+                }
             });
         }
 
@@ -434,11 +455,12 @@
             setRating(1);
             isScannerLocked = false;
 
-            // Stop and restart the camera for continuous scanning
-            if (html5QrCode && isCameraRunning) {
+            // Stop and restart Quagga for continuous scanning
+            if (quaggaInitialized && isCameraRunning) {
                 try {
-                    await html5QrCode.stop();
+                    Quagga.stop();
                     isCameraRunning = false;
+                    quaggaInitialized = false;
                     // Restart the scanner after a short delay
                     setTimeout(() => {
                         initScanner();
