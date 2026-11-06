@@ -239,7 +239,11 @@
             const html5QrCode = new Html5Qrcode("reader");
             html5QrCode.start(
                 { facingMode: "environment" }, 
-                { fps: 10, qrbox: { width: 250, height: 100 }, formatsToSupport: [ Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.CODE_39 ] },
+                { 
+                    fps: 10, 
+                    qrbox: { width: 250, height: 100 }
+                    // Removed the formatsToSupport restriction so it reads EVERYTHING
+                },
                 (decodedText) => { if (!isScannerLocked) onScanSuccess(decodedText); },
                 (errorMessage) => {}
             ).catch(err => {
