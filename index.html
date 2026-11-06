@@ -3,493 +3,158 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bergeon Group | Screen Intake</title>
-    <!-- HTML5 Barcode Scanner Library -->
+    <title>Bergeon Group | Screen Tracker</title>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <style>
         :root {
-            --asu-gold: #FFC627;
-            --black: #000000;
-            --cream: #FDFCE9;
-            --white: #FFFFFF;
-            --gray: #E0E0E0;
-            --dark-gray: #333333;
+            --asu-gold: #FFC627; --black: #000000; --cream: #FDFCE9; 
+            --white: #FFFFFF; --gray: #E0E0E0;
         }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-        }
-
-        body {
-            background-color: var(--cream);
-            color: var(--black);
-            display: flex;
-            height: 100vh;
-            overflow: hidden;
-            flex-direction: row; /* Default desktop */
-        }
-
-        /* Sidebar Styling */
-        .sidebar {
-            width: 250px;
-            background-color: var(--white);
-            border-right: 2px solid var(--black);
-            display: flex;
-            flex-direction: column;
-            z-index: 10;
-        }
-
-        .logo-area {
-            background-color: var(--asu-gold);
-            padding: 20px;
-            border-bottom: 2px solid var(--black);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            height: 80px;
-        }
-
-        .logo-area svg {
-            width: 24px;
-            height: 24px;
-        }
-
-        .logo-area h1 {
-            font-size: 1.2rem;
-            font-weight: 800;
-            letter-spacing: 1px;
-        }
-
-        .nav-links {
-            flex: 1;
-            padding: 20px 0;
-            overflow-y: auto;
-        }
-
-        .nav-item {
-            padding: 15px 20px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            cursor: pointer;
-            font-weight: 600;
-            border-bottom: 1px solid var(--gray);
-            transition: all 0.2s;
-        }
-
-        .nav-item.active {
-            background-color: var(--black);
-            color: var(--white);
-            border-bottom: 1px solid var(--black);
-        }
-
-        /* Main Content Area */
-        .main-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        .topbar {
-            height: 80px;
-            background-color: var(--white);
-            border-bottom: 2px solid var(--black);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 30px;
-            flex-shrink: 0;
-        }
-
-        .topbar h2 {
-            font-size: 1.5rem;
-            font-weight: 800;
-            text-transform: uppercase;
-        }
-
-        /* Dashboard Grid */
-        .dashboard-container {
-            display: flex;
-            flex: 1;
-            overflow: hidden;
-            flex-direction: row; /* Default desktop */
-        }
-
-        .intake-panel {
-            width: 400px;
-            border-right: 2px solid var(--black);
-            display: flex;
-            flex-direction: column;
-            overflow-y: auto;
-            background-color: var(--cream);
-            flex-shrink: 0;
-        }
-
-        .log-panel {
-            flex: 1;
-            background-color: var(--white);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        /* Intake Components */
-        .section-header {
-            background-color: var(--black);
-            color: var(--white);
-            padding: 10px 15px;
-            font-size: 0.9rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .scanner-container {
-            padding: 20px;
-            border-bottom: 2px solid var(--black);
-        }
-
-        /* Pure Video Scanner overrides */
-        #reader {
-            width: 100%;
-            border: 2px solid var(--black);
-            background-color: var(--black);
-            margin-bottom: 15px;
-            overflow: hidden;
-            border-radius: 0;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Helvetica Neue', sans-serif; }
+        body { background-color: var(--cream); color: var(--black); display: flex; height: 100vh; overflow: hidden; }
         
-        #reader video {
-            object-fit: cover;
-        }
+        .sidebar { width: 250px; background-color: var(--white); border-right: 2px solid var(--black); display: flex; flex-direction: column; z-index: 10; }
+        .logo-area { background-color: var(--asu-gold); padding: 20px; border-bottom: 2px solid var(--black); display: flex; align-items: center; gap: 10px; height: 80px; }
+        .logo-area h1 { font-size: 1.2rem; font-weight: 800; letter-spacing: 1px; }
+        .nav-links { flex: 1; padding: 20px 0; overflow-y: auto; }
+        .nav-item { padding: 15px 20px; font-weight: 600; border-bottom: 1px solid var(--gray); cursor: pointer; }
+        .nav-item.active { background-color: var(--black); color: var(--white); border-bottom: 1px solid var(--black); }
 
-        .input-group {
-            margin-bottom: 15px;
-        }
+        .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .topbar { height: 80px; background-color: var(--white); border-bottom: 2px solid var(--black); display: flex; align-items: center; padding: 0 30px; flex-shrink: 0; }
+        .topbar h2 { font-size: 1.5rem; font-weight: 800; text-transform: uppercase; }
 
-        .input-group label {
-            display: block;
-            font-size: 0.75rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            margin-bottom: 5px;
-        }
+        .dashboard-container { display: flex; flex: 1; overflow: hidden; }
+        .intake-panel { width: 400px; border-right: 2px solid var(--black); display: flex; flex-direction: column; overflow-y: auto; background-color: var(--cream); flex-shrink: 0; }
+        .log-panel { flex: 1; background-color: var(--white); display: flex; flex-direction: column; overflow: hidden; }
 
-        .barcode-input-wrapper {
-            display: flex;
-        }
+        .section-header { background-color: var(--black); color: var(--white); padding: 10px 15px; font-size: 0.9rem; font-weight: 700; text-transform: uppercase; display: flex; justify-content: space-between; }
+        .scanner-container { padding: 20px; border-bottom: 2px solid var(--black); }
+        
+        #reader { width: 100%; border: 2px solid var(--black); background-color: var(--black); margin-bottom: 15px; border-radius: 0; }
+        #reader video { object-fit: cover; }
 
-        .barcode-input-wrapper input {
-            flex: 1;
-            padding: 10px;
-            border: 2px solid var(--black);
-            border-right: none;
-            font-size: 1rem;
-            font-family: monospace;
-            background-color: var(--white);
-            outline: none;
-            width: 100%;
-        }
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 5px; }
+        
+        .text-input, select { width: 100%; padding: 10px; border: 2px solid var(--black); font-size: 1rem; background-color: var(--white); outline: none; }
+        .barcode-input-wrapper { display: flex; }
+        .barcode-input-wrapper input { flex: 1; border-right: none; font-family: monospace; }
+        .barcode-input-wrapper button { background-color: var(--black); color: var(--white); border: 2px solid var(--black); padding: 0 15px; font-weight: 700; cursor: pointer; }
 
-        .barcode-input-wrapper button {
-            background-color: var(--black);
-            color: var(--white);
-            border: 2px solid var(--black);
-            padding: 0 15px;
-            font-weight: 700;
-            cursor: pointer;
-        }
+        .form-container { padding: 20px; flex: 1; }
+        .status-display { background-color: var(--white); border: 2px solid var(--black); padding: 10px; font-family: monospace; font-size: 1.1rem; margin-bottom: 20px; text-align: center; }
+        .status-display.active { background-color: var(--asu-gold); color: var(--black); font-weight: bold; }
 
-        /* Form Area */
-        .form-container {
-            padding: 20px;
-            flex: 1;
-        }
-
-        .status-display {
-            background-color: var(--white);
-            border: 2px solid var(--black);
-            padding: 10px;
-            font-family: monospace;
-            font-size: 1.1rem;
-            margin-bottom: 20px;
-            color: #666;
-            text-align: center;
-        }
-
-        .status-display.active {
-            background-color: var(--asu-gold);
-            color: var(--black);
-            font-weight: bold;
-        }
-
-        .toggle-group {
-            display: flex;
-            border: 2px solid var(--black);
-            margin-bottom: 20px;
-        }
-
-        .toggle-btn {
-            flex: 1;
-            padding: 10px;
-            border: none;
-            background: var(--white);
-            font-weight: 700;
-            cursor: pointer;
-            border-right: 2px solid var(--black);
-        }
-
+        .toggle-group { display: flex; border: 2px solid var(--black); margin-bottom: 20px; }
+        .toggle-btn { flex: 1; padding: 10px; border: none; background: var(--white); font-weight: 700; cursor: pointer; border-right: 2px solid var(--black); }
         .toggle-btn:last-child { border-right: none; }
+        .toggle-btn.selected { background-color: var(--asu-gold); }
 
-        .toggle-btn.selected {
-            background-color: var(--asu-gold);
-        }
-
-        select {
-            width: 100%;
-            padding: 10px;
-            border: 2px solid var(--black);
-            font-size: 0.9rem;
-            font-weight: 600;
-            margin-bottom: 20px;
-            background-color: var(--white);
-            outline: none;
-            cursor: pointer;
-        }
-
-        .star-rating {
-            display: flex;
-            border: 2px solid var(--black);
-            background: var(--white);
-            margin-bottom: 30px;
-        }
-
-        .star-btn {
-            flex: 1;
-            padding: 10px 0;
-            border: none;
-            background: none;
-            border-right: 2px solid var(--black);
-            cursor: pointer;
-            font-size: 1.2rem;
-            color: #d9d9d9;
-        }
-
+        .star-rating { display: flex; border: 2px solid var(--black); background: var(--white); margin-bottom: 30px; }
+        .star-btn { flex: 1; padding: 10px 0; border: none; background: none; border-right: 2px solid var(--black); cursor: pointer; font-size: 1.2rem; color: #d9d9d9; }
         .star-btn:last-child { border-right: none; }
         .star-btn.active { color: var(--black); }
 
-        .action-btn {
-            width: 100%;
-            padding: 15px;
-            background-color: var(--gray);
-            color: #666;
-            border: 2px solid var(--black);
-            font-size: 1rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            cursor: not-allowed;
-            transition: all 0.2s;
-        }
+        .action-btn { width: 100%; padding: 15px; background-color: var(--gray); color: #666; border: 2px solid var(--black); font-size: 1rem; font-weight: 800; cursor: not-allowed; }
+        .action-btn.ready { background-color: var(--black); color: var(--white); cursor: pointer; }
 
-        .action-btn.ready {
-            background-color: var(--black);
-            color: var(--white);
-            cursor: pointer;
-        }
+        .log-table-container { flex: 1; overflow-y: auto; padding: 20px; }
+        .empty-state { height: 100%; display: flex; justify-content: center; align-items: center; color: #999; }
+        .data-table { width: 100%; border-collapse: collapse; display: none; }
+        .data-table th, .data-table td { border: 1px solid var(--black); padding: 12px; text-align: left; }
+        .data-table th { background-color: var(--cream); font-size: 0.8rem; text-transform: uppercase; }
+        .badge { padding: 4px 8px; font-size: 0.75rem; font-weight: 700; background-color: var(--asu-gold); color: var(--black); border: 1px solid var(--black); }
+        .badge.return { background-color: var(--black); color: var(--white); }
 
-        /* Log Panel */
-        .log-table-container {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
-        }
+        /* Hide Processing details when returning */
+        .processing-fields { transition: opacity 0.2s; }
+        .processing-fields.hidden { display: none; }
 
-        .empty-state {
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            color: #999;
-        }
-
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-            display: none;
-        }
-
-        .data-table th, .data-table td {
-            border: 1px solid var(--black);
-            padding: 12px;
-            text-align: left;
-        }
-
-        .data-table th {
-            background-color: var(--cream);
-            font-weight: 700;
-            font-size: 0.8rem;
-            text-transform: uppercase;
-        }
-
-        .badge {
-            padding: 4px 8px;
-            font-size: 0.75rem;
-            font-weight: 700;
-            background-color: var(--asu-gold);
-            color: var(--black);
-            border: 1px solid var(--black);
-        }
-
-        .badge.burn {
-            background-color: var(--black);
-            color: var(--white);
-        }
-
-        /* 📱 MOBILE RESPONSIVENESS 📱 */
         @media (max-width: 768px) {
-            body {
-                flex-direction: column;
-                overflow-y: auto; /* Let the whole page scroll on mobile */
-            }
-
-            .sidebar {
-                width: 100%;
-                flex-direction: row;
-                height: 60px;
-                border-right: none;
-                border-bottom: 2px solid var(--black);
-                z-index: 100;
-            }
-
-            .logo-area {
-                height: 60px;
-                border-bottom: none;
-                border-right: 2px solid var(--black);
-                padding: 10px;
-            }
-
-            .logo-area h1 { font-size: 1rem; }
-            .nav-links { display: none; /* Hide secondary links on mobile to save space */ }
-
-            .main-content {
-                overflow: visible; 
-            }
-
-            .topbar {
-                height: 60px;
-                padding: 0 15px;
-            }
-
-            .topbar h2 {
-                font-size: 1.1rem;
-            }
-
-            .dashboard-container {
-                flex-direction: column;
-                overflow: visible;
-            }
-
-            .intake-panel {
-                width: 100%;
-                border-right: none;
-                border-bottom: 2px solid var(--black);
-                overflow-y: visible;
-            }
-
-            .log-panel {
-                min-height: 400px;
-            }
-            
-            /* Make table horizontally scrollable on small screens */
-            .log-table-container {
-                overflow-x: auto; 
-            }
+            body { flex-direction: column; overflow-y: auto; }
+            .sidebar { width: 100%; flex-direction: row; height: 60px; border-right: none; border-bottom: 2px solid var(--black); }
+            .logo-area { height: 60px; border-bottom: none; border-right: 2px solid var(--black); padding: 10px; }
+            .nav-links { display: none; }
+            .dashboard-container { flex-direction: column; overflow: visible; }
+            .intake-panel { width: 100%; border-right: none; border-bottom: 2px solid var(--black); overflow-y: visible; }
+            .log-panel { min-height: 400px; }
+            .log-table-container { overflow-x: auto; }
         }
     </style>
 </head>
 <body>
-
     <aside class="sidebar">
-        <div class="logo-area">
-            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm3.88-11.71L10 14.17l-1.88-1.88a.996.996 0 1 0-1.41 1.41l2.59 2.59c.39.39 1.02.39 1.41 0L17.3 9.7a.996.996 0 0 0-1.42-1.41z"/></svg>
-            <h1>BERGEON</h1>
-        </div>
-        <nav class="nav-links">
-            <div class="nav-item active">INTAKE DASHBOARD</div>
-            <div class="nav-item">SCREEN INVENTORY</div>
-            <div class="nav-item">EMULSION LOGS</div>
-            <div class="nav-item">INVOICING</div>
-        </nav>
+        <div class="logo-area"><h1>BERGEON</h1></div>
+        <nav class="nav-links"><div class="nav-item active">TRACKING DASHBOARD</div></nav>
     </aside>
 
     <main class="main-content">
-        <header class="topbar">
-            <h2>Screen Processing Intake</h2>
-        </header>
-
+        <header class="topbar"><h2>Screen Tracking</h2></header>
         <div class="dashboard-container">
-            <!-- Left Panel: Scanning & Data Entry -->
+            
             <div class="intake-panel">
                 <div class="scanner-container">
-                    <!-- Clean video feed div (no UI) -->
                     <div id="reader"></div>
-                    
                     <div class="input-group">
                         <label>Manual Fallback Input</label>
                         <div class="barcode-input-wrapper">
-                            <input type="text" id="manualBarcode" placeholder="Enter barcode manually...">
+                            <input type="text" id="manualBarcode" class="text-input" placeholder="Enter barcode manually...">
                             <button onclick="handleManualEntry()">ENTER</button>
                         </div>
                     </div>
                 </div>
 
                 <div class="section-header">
-                    <span>Processing Details</span>
+                    <span>Workflow Details</span>
                     <span id="priceDisplay" style="color: var(--asu-gold);">$0.00</span>
                 </div>
 
                 <div class="form-container">
                     <div class="input-group">
-                        <label>Linked Barcode</label>
-                        <div class="status-display" id="barcodeDisplay">Ready to scan...</div>
+                        <label>Technician Name</label>
+                        <input type="text" id="techName" class="text-input" placeholder="e.g., John Doe">
                     </div>
 
                     <div class="input-group">
-                        <label>Service Type</label>
+                        <label>Action Type</label>
                         <div class="toggle-group">
-                            <button class="toggle-btn selected" id="btnReclaim" onclick="setService('reclaim')">RECLAIM</button>
-                            <button class="toggle-btn" id="btnBurn" onclick="setService('burn')">BURN</button>
+                            <button class="toggle-btn selected" id="btnIntake" onclick="setActionType('INTAKE')">PICKUP (INTAKE)</button>
+                            <button class="toggle-btn" id="btnReturn" onclick="setActionType('RETURN')">DISPATCH (RETURN)</button>
                         </div>
                     </div>
 
                     <div class="input-group">
-                        <label>Emulsion Type</label>
-                        <select id="emulsionSelect" disabled>
-                            <option value="dual-cure">DUAL CURE</option>
-                            <option value="diazo">DIAZO</option>
-                            <option value="photopolymer">PHOTOPOLYMER</option>
-                            <option value="capillary-film">CAPILLARY FILM</option>
-                        </select>
+                        <label>Linked Barcode</label>
+                        <div class="status-display" id="barcodeDisplay">Ready to scan...</div>
                     </div>
 
-                    <div class="input-group">
-                        <label style="display: flex; justify-content: space-between;">
-                            <span>Difficulty Rating</span>
-                            <span style="font-weight: normal; color: #666;">1=Easy, 5=Hard</span>
-                        </label>
-                        <div class="star-rating">
-                            <button class="star-btn active" onclick="setRating(1)">★</button>
-                            <button class="star-btn" onclick="setRating(2)">★</button>
-                            <button class="star-btn" onclick="setRating(3)">★</button>
-                            <button class="star-btn" onclick="setRating(4)">★</button>
-                            <button class="star-btn" onclick="setRating(5)">★</button>
+                    <!-- Wrapped processing fields to hide on RETURN -->
+                    <div id="processingFields" class="processing-fields">
+                        <div class="input-group">
+                            <label>Service Type</label>
+                            <div class="toggle-group">
+                                <button class="toggle-btn selected" id="btnReclaim" onclick="setService('reclaim')">RECLAIM</button>
+                                <button class="toggle-btn" id="btnBurn" onclick="setService('burn')">BURN</button>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label>Emulsion Type</label>
+                            <select id="emulsionSelect" class="text-input" disabled>
+                                <option value="dual-cure">DUAL CURE</option>
+                                <option value="diazo">DIAZO</option>
+                                <option value="capillary-film">CAPILLARY FILM</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label>Difficulty Rating (1=Easy, 5=Hard)</label>
+                            <div class="star-rating">
+                                <button class="star-btn active" onclick="setRating(1)">★</button>
+                                <button class="star-btn" onclick="setRating(2)">★</button>
+                                <button class="star-btn" onclick="setRating(3)">★</button>
+                                <button class="star-btn" onclick="setRating(4)">★</button>
+                                <button class="star-btn" onclick="setRating(5)">★</button>
+                            </div>
                         </div>
                     </div>
 
@@ -497,25 +162,20 @@
                 </div>
             </div>
 
-            <!-- Right Panel: Log History -->
             <div class="log-panel">
                 <div class="log-table-container">
-                    <div class="empty-state" id="emptyState">
-                        <h3>No screens processed this shift.</h3>
-                    </div>
+                    <div class="empty-state" id="emptyState"><h3>Loading data...</h3></div>
                     <table class="data-table" id="logTable">
                         <thead>
                             <tr>
                                 <th>Time</th>
-                                <th>Barcode ID</th>
-                                <th>Service</th>
-                                <th>Emulsion</th>
-                                <th>Diff</th>
+                                <th>Action</th>
+                                <th>Tech</th>
+                                <th>Barcode</th>
                                 <th>Cost</th>
                             </tr>
                         </thead>
-                        <tbody id="logBody">
-                        </tbody>
+                        <tbody id="logBody"></tbody>
                     </table>
                 </div>
             </div>
@@ -524,85 +184,115 @@
 
     <script>
         let currentBarcode = null;
+        let currentAction = 'INTAKE';
         let currentService = 'reclaim';
         let currentRating = 1;
-        let isScannerLocked = false; // Prevents continuous scanning of the same barcode
+        let isScannerLocked = false; 
         
         const basePrices = { reclaim: 10, burn: 50 };
         const difficultyMultipliers = [1, 1.2, 1.5, 1.8, 2];
 
-        // Direct API Camera Initialization (No UI)
+        // Fetch Live Database Logs on Load
         document.addEventListener("DOMContentLoaded", () => {
+            fetchLogs();
+            initScanner();
+        });
+
+        async function fetchLogs() {
+            try {
+                // Ensure this is your live Render API URL
+                const response = await fetch('https://bergeon-group.onrender.com/api/logs');
+                const data = await response.json();
+                
+                if (data.logs.length > 0) {
+                    document.getElementById('emptyState').style.display = 'none';
+                    document.getElementById('logTable').style.display = 'table';
+                    const tbody = document.getElementById('logBody');
+                    tbody.innerHTML = ''; // Clear loading state
+                    
+                    data.logs.forEach(log => {
+                        const badgeClass = log.action_type === 'RETURN' ? 'badge return' : 'badge';
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${log.time}</td>
+                            <td><span class="${badgeClass}">${log.action_type}</span></td>
+                            <td>${log.technician_name}</td>
+                            <td><strong>${log.barcode}</strong></td>
+                            <td>$${log.estimated_cost}</td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                } else {
+                    document.getElementById('emptyState').innerHTML = '<h3>No records found.</h3>';
+                }
+            } catch (err) {
+                document.getElementById('emptyState').innerHTML = '<h3>Failed to load database logs.</h3>';
+            }
+        }
+
+        function initScanner() {
             const html5QrCode = new Html5Qrcode("reader");
-            
-            // Start the back camera immediately
             html5QrCode.start(
                 { facingMode: "environment" }, 
                 {
                     fps: 10,
                     qrbox: { width: 250, height: 100 },
-                    aspectRatio: 1.333
+                    // Force scanner to look for standard 1D barcodes used by label printers
+                    formatsToSupport: [ Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.CODE_39 ]
                 },
-                (decodedText, decodedResult) => {
-                    // Only process if we aren't currently holding a scanned barcode
-                    if (!isScannerLocked) {
-                        onScanSuccess(decodedText);
-                    }
-                },
-                (errorMessage) => {
-                    // Ignore background scan failures
-                }
+                (decodedText) => { if (!isScannerLocked) onScanSuccess(decodedText); },
+                (errorMessage) => {}
             ).catch(err => {
-                console.error("Camera access denied or unavailable", err);
                 document.getElementById('reader').innerHTML = '<p style="color:white; padding:20px; text-align:center;">Camera access denied. Please use manual input.</p>';
             });
-        });
+        }
 
         function onScanSuccess(decodedText) {
-            isScannerLocked = true; // Lock the scanner so it stops reading
-            
-            // Beep to confirm scan
-            try {
-                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                const oscillator = audioCtx.createOscillator();
-                oscillator.type = 'sine';
-                oscillator.frequency.setValueAtTime(800, audioCtx.currentTime); 
-                oscillator.connect(audioCtx.destination);
-                oscillator.start();
-                oscillator.stop(audioCtx.currentTime + 0.1);
-            } catch(e) {} // Ignore if browser blocks audio
-
+            isScannerLocked = true; 
             processBarcode(decodedText);
         }
 
         function handleManualEntry() {
-            const input = document.getElementById('manualBarcode').value;
-            if (input.trim().length > 0) { 
+            const input = document.getElementById('manualBarcode').value.trim();
+            if (input.length > 0) { 
                 isScannerLocked = true;
-                processBarcode(input.trim());
+                processBarcode(input);
                 document.getElementById('manualBarcode').value = '';
             }
         }
 
         function processBarcode(code) {
             currentBarcode = code;
-            
             const display = document.getElementById('barcodeDisplay');
             display.textContent = code;
             display.classList.add('active');
             
-            document.getElementById('emulsionSelect').disabled = false;
+            if(currentAction === 'INTAKE') document.getElementById('emulsionSelect').disabled = false;
             
             const btn = document.getElementById('submitBtn');
             btn.textContent = 'LOG SCREEN TO DATABASE';
             btn.classList.add('ready');
 
             updatePrice();
-            
-            // Optional: Auto-scroll down to the form on mobile after a scan
-            if(window.innerWidth <= 768) {
-                document.getElementById('barcodeDisplay').scrollIntoView({behavior: "smooth"});
+        }
+
+        function setActionType(type) {
+            currentAction = type;
+            const btnIntake = document.getElementById('btnIntake');
+            const btnReturn = document.getElementById('btnReturn');
+            const procFields = document.getElementById('processingFields');
+
+            if(type === 'INTAKE') {
+                btnIntake.classList.add('selected');
+                btnReturn.classList.remove('selected');
+                procFields.classList.remove('hidden');
+                document.getElementById('emulsionSelect').disabled = !currentBarcode;
+            } else {
+                btnReturn.classList.add('selected');
+                btnIntake.classList.remove('selected');
+                procFields.classList.add('hidden'); // Hide unneeded fields for Returns
             }
+            updatePrice();
         }
 
         function setService(type) {
@@ -621,42 +311,54 @@
             currentRating = rating;
             const stars = document.querySelectorAll('.star-btn');
             stars.forEach((star, index) => {
-                if (index < rating) {
-                    star.classList.add('active');
-                } else {
-                    star.classList.remove('active');
-                }
+                if (index < rating) star.classList.add('active');
+                else star.classList.remove('active');
             });
             updatePrice();
         }
 
         function updatePrice() {
             if(!currentBarcode) return;
+            // Returns have $0 extra cost logic for this phase
+            if(currentAction === 'RETURN') {
+                document.getElementById('priceDisplay').textContent = `$0.00`;
+                return;
+            }
             const base = basePrices[currentService];
             const multiplier = difficultyMultipliers[currentRating - 1];
-            const finalPrice = (base * multiplier).toFixed(2);
-            document.getElementById('priceDisplay').textContent = `$${finalPrice}`;
+            document.getElementById('priceDisplay').textContent = `$${(base * multiplier).toFixed(2)}`;
         }
 
         async function submitLog() {
             if (!currentBarcode) return;
-
+            
+            const techName = document.getElementById('techName').value.trim() || 'Unknown';
             const btn = document.getElementById('submitBtn');
             btn.textContent = 'SAVING...';
             
-            const emulsion = document.getElementById('emulsionSelect').options[document.getElementById('emulsionSelect').selectedIndex].text;
-            const rawPrice = parseFloat(document.getElementById('priceDisplay').textContent.replace('$', ''));
+            let emulsion = 'N/A';
+            let rating = 0;
+            let service = 'none';
+            let rawPrice = 0.00;
+
+            if (currentAction === 'INTAKE') {
+                emulsion = document.getElementById('emulsionSelect').options[document.getElementById('emulsionSelect').selectedIndex].text;
+                rating = currentRating;
+                service = currentService;
+                rawPrice = parseFloat(document.getElementById('priceDisplay').textContent.replace('$', ''));
+            }
 
             const payload = {
                 barcode: currentBarcode,
-                service_type: currentService,
+                technician_name: techName,
+                action_type: currentAction,
+                service_type: service,
                 emulsion_type: emulsion,
-                difficulty_rating: currentRating,
+                difficulty_rating: rating,
                 estimated_cost: rawPrice
             };
 
             try {
-                // IMPORTANT: Ensure this matches your Render URL
                 const response = await fetch('https://bergeon-group.onrender.com/api/intake', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -664,32 +366,14 @@
                 });
 
                 if(response.ok) {
-                    document.getElementById('emptyState').style.display = 'none';
-                    document.getElementById('logTable').style.display = 'table';
-                    
-                    const timeString = new Date().toLocaleTimeString('en-US', { hour12: false });
-                    const tbody = document.getElementById('logBody');
-                    const row = document.createElement('tr');
-                    
-                    const serviceBadgeClass = currentService === 'burn' ? 'badge burn' : 'badge';
-
-                    row.innerHTML = `
-                        <td>${timeString}</td>
-                        <td><strong>${currentBarcode}</strong></td>
-                        <td><span class="${serviceBadgeClass}">${currentService.toUpperCase()}</span></td>
-                        <td>${emulsion}</td>
-                        <td>${'★'.repeat(currentRating)}</td>
-                        <td>$${rawPrice.toFixed(2)}</td>
-                    `;
-
-                    tbody.insertBefore(row, tbody.firstChild);
+                    fetchLogs(); // Re-sync table dynamically
                     resetForm();
                 } else {
                     alert("Database Error");
                     btn.textContent = 'LOG SCREEN TO DATABASE';
                 }
             } catch (error) {
-                alert("Failed to connect to the backend API.");
+                alert("Failed to connect to backend.");
                 btn.textContent = 'LOG SCREEN TO DATABASE';
             }
         }
@@ -698,11 +382,9 @@
             currentBarcode = null;
             currentRating = 1;
             
-            const display = document.getElementById('barcodeDisplay');
-            display.textContent = 'Ready to scan...';
-            display.classList.remove('active');
+            document.getElementById('barcodeDisplay').textContent = 'Ready to scan...';
+            document.getElementById('barcodeDisplay').classList.remove('active');
             
-            document.getElementById('emulsionSelect').disabled = true;
             document.getElementById('priceDisplay').textContent = '$0.00';
             
             const btn = document.getElementById('submitBtn');
@@ -710,11 +392,8 @@
             btn.classList.remove('ready');
 
             setRating(1);
-            
-            // Unlock the scanner so it can read the next screen immediately
             isScannerLocked = false; 
             
-            // Scroll back to top on mobile
             if(window.innerWidth <= 768) {
                 window.scrollTo({top: 0, behavior: 'smooth'});
             }

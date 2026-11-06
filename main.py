@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import os
 import psycopg2
@@ -7,28 +8,23 @@ from psycopg2.extras import RealDictCursor
 
 app = FastAPI(title="Bergeon Screen Intake API")
 
-@app.get("/")
-async def root():
-    return {"status": "online", "message": "Bergeon API is running"}
-
-# Allow your Vercel frontend to communicate with this Render backend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Security note: Change "*" to your Vercel URL later
+    allow_origins=["*"],  
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Connect to Neon Database using Environment Variables
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 def get_db_connection():
     return psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
 
-# Define the data structure coming from the scanner
 class ScreenLog(BaseModel):
     barcode: str
+    technician_name: str
+    action_type: str
     service_type: str
     emulsion_type: str
     difficulty_rating: int
@@ -41,12 +37,14 @@ async def log_screen(log: ScreenLog):
         cursor = conn.cursor()
         
         insert_query = """
-            INSERT INTO screen_logs (barcode, service_type, emulsion_type, difficulty_rating, estimated_cost)
-            VALUES (%s, %s, %s, %s, %s)
+            INSERT INTO screen_logs (barcode, technician_name, action_type, service_type, emulsion_type, difficulty_rating, estimated_cost)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
             RETURNING id, scanned_at;
         """
         cursor.execute(insert_query, (
-            log.barcode, 
+            log.barcode,
+            log.technician_name,
+            log.action_type,
             log.service_type, 
             log.emulsion_type, 
             log.difficulty_rating, 
@@ -55,11 +53,10 @@ async def log_screen(log: ScreenLog):
         
         result = cursor.fetchone()
         conn.commit()
-        
         cursor.close()
         conn.close()
         
-        return {"status": "success", "message": "Screen logged securely", "data": result}
+        return {"status": "success", "message": "Screen logged", "data": result}
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -70,13 +67,18 @@ async def get_logs():
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # Fetch the most recent 50 scans for the dashboard
-        cursor.execute("SELECT * FROM screen_logs ORDER BY scanned_at DESC LIMIT 50;")
+        # Format the timestamp directly in SQL so it's easy for the frontend to read
+        cursor.execute("""
+            SELECT 
+                TO_CHAR(scanned_at, 'HH24:MI:SS') as time,
+                barcode, action_type, technician_name, service_type, estimated_cost 
+            FROM screen_logs 
+            ORDER BY scanned_at DESC LIMIT 50;
+        """)
         logs = cursor.fetchall()
         
         cursor.close()
         conn.close()
-        
         return {"status": "success", "logs": logs}
         
     except Exception as e:
