@@ -31,7 +31,7 @@
         .section-header { background-color: var(--black); color: var(--white); padding: 10px 15px; font-size: 0.9rem; font-weight: 700; text-transform: uppercase; display: flex; justify-content: space-between; }
         .scanner-container { padding: 20px; border-bottom: 2px solid var(--black); }
         
-        #reader { width: 100%; border: 2px solid var(--black); background-color: var(--black); margin-bottom: 15px; border-radius: 0; }
+        #reader { width: 100%; border: 2px solid var(--black); background-color: var(--black); margin-bottom: 15px; border-radius: 0; display: none; }
         #reader video { object-fit: cover; }
 
         .input-group { margin-bottom: 15px; }
@@ -58,6 +58,7 @@
 
         .action-btn { width: 100%; padding: 15px; background-color: var(--gray); color: #666; border: 2px solid var(--black); font-size: 1rem; font-weight: 800; cursor: not-allowed; }
         .action-btn.ready { background-color: var(--black); color: var(--white); cursor: pointer; }
+        .camera-start-btn { width: 100%; padding: 20px; margin-bottom: 15px; background-color: var(--black); color: var(--white); border: 2px solid var(--black); font-size: 1.1rem; font-weight: 800; cursor: pointer; }
 
         .log-table-container { flex: 1; overflow-y: auto; padding: 20px; }
         .empty-state { height: 100%; display: flex; justify-content: center; align-items: center; color: #999; }
@@ -71,19 +72,14 @@
         .processing-fields.hidden { display: none; }
 
         @media (max-width: 768px) {
-            /* Fix mobile display so table isn't cut off */
             body { flex-direction: column; overflow-y: auto; min-height: 100vh; }
             .sidebar { width: 100%; flex-direction: row; height: 60px; border-right: none; border-bottom: 2px solid var(--black); flex-shrink: 0; }
             .logo-area { height: 60px; border-bottom: none; border-right: 2px solid var(--black); padding: 10px; }
             .nav-links { display: none; }
-            
             .main-content { overflow: visible; height: auto; flex: none; }
             .topbar { display: none; } 
-            
             .dashboard-container { flex-direction: column; overflow: visible; height: auto; }
             .intake-panel { width: 100%; border-right: none; border-bottom: 2px solid var(--black); overflow-y: visible; height: auto; }
-            
-            /* Ensure the log panel fully renders its height */
             .log-panel { overflow: visible; height: auto; flex: none; padding-bottom: 40px; }
             .log-table-container { overflow-x: auto; overflow-y: visible; }
         }
@@ -101,7 +97,11 @@
             
             <div class="intake-panel">
                 <div class="scanner-container" id="topOfPage">
+                    <!-- New Button to manually trigger camera permission -->
+                    <button id="startCameraBtn" class="camera-start-btn" onclick="startCamera()">📷 TAP TO START CAMERA</button>
+                    
                     <div id="reader"></div>
+                    
                     <div class="input-group">
                         <label>Manual Fallback Input</label>
                         <div class="barcode-input-wrapper">
@@ -194,7 +194,7 @@
 
         document.addEventListener("DOMContentLoaded", () => {
             fetchLogs();
-            initScanner();
+            // initScanner() is deliberately removed here so it waits for the button tap
         });
 
         function formatDateTime(dateString) {
@@ -235,10 +235,16 @@
             }
         }
 
+        function startCamera() {
+            // Hide the button and show the video feed box
+            document.getElementById('startCameraBtn').style.display = 'none';
+            document.getElementById('reader').style.display = 'block';
+            initScanner();
+        }
+
         function initScanner() {
             const html5QrCode = new Html5Qrcode("reader");
             
-            // Force High Definition (1080p) and Continuous Auto-Focus
             const cameraConfig = { 
                 facingMode: "environment",
                 width: { min: 1280, ideal: 1920 },
@@ -248,7 +254,7 @@
 
             html5QrCode.start(
                 cameraConfig, 
-                { fps: 15 }, // slightly increased frame rate for better capture
+                { fps: 15 },
                 (decodedText) => { if (!isScannerLocked) onScanSuccess(decodedText); },
                 (errorMessage) => {}
             ).catch(err => {
@@ -388,7 +394,6 @@
             setRating(1);
             isScannerLocked = false; 
             
-            // Instantly auto-scroll to the top of the page when on mobile
             if(window.innerWidth <= 768) {
                 window.scrollTo({top: 0, behavior: 'instant'});
             }
