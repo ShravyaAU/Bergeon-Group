@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bergeon Group | Screen Intake</title>
-    <!-- Add HTML5 Barcode Scanner Library -->
+    <!-- HTML5 Barcode Scanner Library -->
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <style>
         :root {
@@ -29,6 +29,7 @@
             display: flex;
             height: 100vh;
             overflow: hidden;
+            flex-direction: row; /* Default desktop */
         }
 
         /* Sidebar Styling */
@@ -65,6 +66,7 @@
         .nav-links {
             flex: 1;
             padding: 20px 0;
+            overflow-y: auto;
         }
 
         .nav-item {
@@ -78,24 +80,10 @@
             transition: all 0.2s;
         }
 
-        .nav-item:hover {
-            background-color: var(--cream);
-        }
-
         .nav-item.active {
             background-color: var(--black);
             color: var(--white);
             border-bottom: 1px solid var(--black);
-        }
-
-        .nav-item.active svg {
-            fill: var(--white);
-        }
-
-        .nav-item svg {
-            width: 20px;
-            height: 20px;
-            fill: var(--black);
         }
 
         /* Main Content Area */
@@ -103,9 +91,9 @@
             flex: 1;
             display: flex;
             flex-direction: column;
+            overflow: hidden;
         }
 
-        /* Topbar */
         .topbar {
             height: 80px;
             background-color: var(--white);
@@ -114,13 +102,13 @@
             justify-content: space-between;
             align-items: center;
             padding: 0 30px;
+            flex-shrink: 0;
         }
 
         .topbar h2 {
             font-size: 1.5rem;
             font-weight: 800;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
         }
 
         /* Dashboard Grid */
@@ -128,6 +116,7 @@
             display: flex;
             flex: 1;
             overflow: hidden;
+            flex-direction: row; /* Default desktop */
         }
 
         .intake-panel {
@@ -137,6 +126,7 @@
             flex-direction: column;
             overflow-y: auto;
             background-color: var(--cream);
+            flex-shrink: 0;
         }
 
         .log-panel {
@@ -144,6 +134,7 @@
             background-color: var(--white);
             display: flex;
             flex-direction: column;
+            overflow: hidden;
         }
 
         /* Intake Components */
@@ -154,7 +145,6 @@
             font-size: 0.9rem;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 1px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -165,28 +155,18 @@
             border-bottom: 2px solid var(--black);
         }
 
-        /* html5-qrcode overrides to match your theme */
+        /* Pure Video Scanner overrides */
         #reader {
             width: 100%;
-            border: 2px solid var(--black) !important;
-            background-color: var(--white);
-            margin-bottom: 15px;
-        }
-        
-        #reader button {
-            background-color: var(--black);
-            color: var(--white);
-            border: none;
-            padding: 8px 12px;
-            font-weight: bold;
-            cursor: pointer;
-            margin: 5px;
-        }
-        
-        #reader select {
             border: 2px solid var(--black);
-            padding: 5px;
-            margin-bottom: 10px;
+            background-color: var(--black);
+            margin-bottom: 15px;
+            overflow: hidden;
+            border-radius: 0;
+        }
+        
+        #reader video {
+            object-fit: cover;
         }
 
         .input-group {
@@ -214,6 +194,7 @@
             font-family: monospace;
             background-color: var(--white);
             outline: none;
+            width: 100%;
         }
 
         .barcode-input-wrapper button {
@@ -239,6 +220,7 @@
             font-size: 1.1rem;
             margin-bottom: 20px;
             color: #666;
+            text-align: center;
         }
 
         .status-display.active {
@@ -263,9 +245,7 @@
             border-right: 2px solid var(--black);
         }
 
-        .toggle-btn:last-child {
-            border-right: none;
-        }
+        .toggle-btn:last-child { border-right: none; }
 
         .toggle-btn.selected {
             background-color: var(--asu-gold);
@@ -301,13 +281,8 @@
             color: #d9d9d9;
         }
 
-        .star-btn:last-child {
-            border-right: none;
-        }
-
-        .star-btn.active {
-            color: var(--black);
-        }
+        .star-btn:last-child { border-right: none; }
+        .star-btn.active { color: var(--black); }
 
         .action-btn {
             width: 100%;
@@ -328,11 +303,6 @@
             cursor: pointer;
         }
 
-        .action-btn.ready:hover {
-            background-color: var(--asu-gold);
-            color: var(--black);
-        }
-
         /* Log Panel */
         .log-table-container {
             flex: 1;
@@ -347,13 +317,6 @@
             justify-content: center;
             align-items: center;
             color: #999;
-        }
-
-        .empty-state svg {
-            width: 48px;
-            height: 48px;
-            fill: #d9d9d9;
-            margin-bottom: 10px;
         }
 
         .data-table {
@@ -375,11 +338,6 @@
             text-transform: uppercase;
         }
 
-        .data-table td {
-            font-size: 0.9rem;
-            font-family: monospace;
-        }
-
         .badge {
             padding: 4px 8px;
             font-size: 0.75rem;
@@ -394,15 +352,65 @@
             color: var(--white);
         }
 
-        .table-footer {
-            height: 40px;
-            border-top: 2px solid var(--black);
-            background-color: var(--cream);
-            display: flex;
-            align-items: center;
-            padding: 0 20px;
-            font-size: 0.8rem;
-            font-weight: 700;
+        /* 📱 MOBILE RESPONSIVENESS 📱 */
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+                overflow-y: auto; /* Let the whole page scroll on mobile */
+            }
+
+            .sidebar {
+                width: 100%;
+                flex-direction: row;
+                height: 60px;
+                border-right: none;
+                border-bottom: 2px solid var(--black);
+                z-index: 100;
+            }
+
+            .logo-area {
+                height: 60px;
+                border-bottom: none;
+                border-right: 2px solid var(--black);
+                padding: 10px;
+            }
+
+            .logo-area h1 { font-size: 1rem; }
+            .nav-links { display: none; /* Hide secondary links on mobile to save space */ }
+
+            .main-content {
+                overflow: visible; 
+            }
+
+            .topbar {
+                height: 60px;
+                padding: 0 15px;
+            }
+
+            .topbar h2 {
+                font-size: 1.1rem;
+            }
+
+            .dashboard-container {
+                flex-direction: column;
+                overflow: visible;
+            }
+
+            .intake-panel {
+                width: 100%;
+                border-right: none;
+                border-bottom: 2px solid var(--black);
+                overflow-y: visible;
+            }
+
+            .log-panel {
+                min-height: 400px;
+            }
+            
+            /* Make table horizontally scrollable on small screens */
+            .log-table-container {
+                overflow-x: auto; 
+            }
         }
     </style>
 </head>
@@ -414,18 +422,10 @@
             <h1>BERGEON</h1>
         </div>
         <nav class="nav-links">
-            <div class="nav-item active">
-                INTAKE DASHBOARD
-            </div>
-            <div class="nav-item">
-                SCREEN INVENTORY
-            </div>
-            <div class="nav-item">
-                EMULSION LOGS
-            </div>
-            <div class="nav-item">
-                INVOICING
-            </div>
+            <div class="nav-item active">INTAKE DASHBOARD</div>
+            <div class="nav-item">SCREEN INVENTORY</div>
+            <div class="nav-item">EMULSION LOGS</div>
+            <div class="nav-item">INVOICING</div>
         </nav>
     </aside>
 
@@ -435,9 +435,10 @@
         </header>
 
         <div class="dashboard-container">
+            <!-- Left Panel: Scanning & Data Entry -->
             <div class="intake-panel">
                 <div class="scanner-container">
-                    <!-- Actual Camera Scanner Div -->
+                    <!-- Clean video feed div (no UI) -->
                     <div id="reader"></div>
                     
                     <div class="input-group">
@@ -457,7 +458,7 @@
                 <div class="form-container">
                     <div class="input-group">
                         <label>Linked Barcode</label>
-                        <div class="status-display" id="barcodeDisplay">Awaiting scan...</div>
+                        <div class="status-display" id="barcodeDisplay">Ready to scan...</div>
                     </div>
 
                     <div class="input-group">
@@ -496,29 +497,26 @@
                 </div>
             </div>
 
+            <!-- Right Panel: Log History -->
             <div class="log-panel">
                 <div class="log-table-container">
                     <div class="empty-state" id="emptyState">
-                        <svg viewBox="0 0 24 24"><path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/></svg>
                         <h3>No screens processed this shift.</h3>
                     </div>
                     <table class="data-table" id="logTable">
                         <thead>
                             <tr>
-                                <th>Timestamp</th>
+                                <th>Time</th>
                                 <th>Barcode ID</th>
                                 <th>Service</th>
                                 <th>Emulsion</th>
-                                <th>Difficulty</th>
-                                <th>Est. Cost</th>
+                                <th>Diff</th>
+                                <th>Cost</th>
                             </tr>
                         </thead>
                         <tbody id="logBody">
                         </tbody>
                     </table>
-                </div>
-                <div class="table-footer">
-                    <span id="recordCount">0 RECORDS</span>
                 </div>
             </div>
         </div>
@@ -528,48 +526,67 @@
         let currentBarcode = null;
         let currentService = 'reclaim';
         let currentRating = 1;
-        let recordCount = 0;
+        let isScannerLocked = false; // Prevents continuous scanning of the same barcode
+        
         const basePrices = { reclaim: 10, burn: 50 };
         const difficultyMultipliers = [1, 1.2, 1.5, 1.8, 2];
 
-        // Initialize Live Camera Scanner
-        function onScanSuccess(decodedText, decodedResult) {
+        // Direct API Camera Initialization (No UI)
+        document.addEventListener("DOMContentLoaded", () => {
+            const html5QrCode = new Html5Qrcode("reader");
+            
+            // Start the back camera immediately
+            html5QrCode.start(
+                { facingMode: "environment" }, 
+                {
+                    fps: 10,
+                    qrbox: { width: 250, height: 100 },
+                    aspectRatio: 1.333
+                },
+                (decodedText, decodedResult) => {
+                    // Only process if we aren't currently holding a scanned barcode
+                    if (!isScannerLocked) {
+                        onScanSuccess(decodedText);
+                    }
+                },
+                (errorMessage) => {
+                    // Ignore background scan failures
+                }
+            ).catch(err => {
+                console.error("Camera access denied or unavailable", err);
+                document.getElementById('reader').innerHTML = '<p style="color:white; padding:20px; text-align:center;">Camera access denied. Please use manual input.</p>';
+            });
+        });
+
+        function onScanSuccess(decodedText) {
+            isScannerLocked = true; // Lock the scanner so it stops reading
+            
             // Beep to confirm scan
-            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            const oscillator = audioCtx.createOscillator();
-            oscillator.type = 'sine';
-            oscillator.frequency.setValueAtTime(800, audioCtx.currentTime); // 800Hz beep
-            oscillator.connect(audioCtx.destination);
-            oscillator.start();
-            oscillator.stop(audioCtx.currentTime + 0.1);
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioCtx.createOscillator();
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(800, audioCtx.currentTime); 
+                oscillator.connect(audioCtx.destination);
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + 0.1);
+            } catch(e) {} // Ignore if browser blocks audio
 
             processBarcode(decodedText);
         }
 
-        function onScanFailure(error) {
-            // Ignore ongoing scan failures as it constantly reads until it finds one
-        }
-
-        // Render the scanner when the page loads
-        document.addEventListener("DOMContentLoaded", function() {
-            let html5QrcodeScanner = new Html5QrcodeScanner(
-                "reader",
-                { fps: 10, qrbox: {width: 250, height: 100} },
-                /* verbose= */ false);
-            html5QrcodeScanner.render(onScanSuccess, onScanFailure);
-        });
-
-        // The rest of the logic remains the same
         function handleManualEntry() {
             const input = document.getElementById('manualBarcode').value;
-            if (input.length > 0) { 
-                processBarcode(input);
+            if (input.trim().length > 0) { 
+                isScannerLocked = true;
+                processBarcode(input.trim());
                 document.getElementById('manualBarcode').value = '';
             }
         }
 
         function processBarcode(code) {
             currentBarcode = code;
+            
             const display = document.getElementById('barcodeDisplay');
             display.textContent = code;
             display.classList.add('active');
@@ -581,6 +598,11 @@
             btn.classList.add('ready');
 
             updatePrice();
+            
+            // Optional: Auto-scroll down to the form on mobile after a scan
+            if(window.innerWidth <= 768) {
+                document.getElementById('barcodeDisplay').scrollIntoView({behavior: "smooth"});
+            }
         }
 
         function setService(type) {
@@ -619,13 +641,11 @@
         async function submitLog() {
             if (!currentBarcode) return;
 
-            // Change btn text to show loading state
             const btn = document.getElementById('submitBtn');
-            btn.textContent = 'SAVING TO DATABASE...';
-    
+            btn.textContent = 'SAVING...';
+            
             const emulsion = document.getElementById('emulsionSelect').options[document.getElementById('emulsionSelect').selectedIndex].text;
-            const priceText = document.getElementById('priceDisplay').textContent;
-            const rawPrice = parseFloat(priceText.replace('$', '')); // Remove the $ for the database
+            const rawPrice = parseFloat(document.getElementById('priceDisplay').textContent.replace('$', ''));
 
             const payload = {
                 barcode: currentBarcode,
@@ -636,27 +656,22 @@
             };
 
             try {
-                // Replace with your live Render URL once deployed
+                // IMPORTANT: Ensure this matches your Render URL
                 const response = await fetch('https://bergeon-group.onrender.com/api/intake', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
 
-                const result = await response.json();
-
                 if(response.ok) {
-                    // Un-hide the table if it's the first scan
                     document.getElementById('emptyState').style.display = 'none';
                     document.getElementById('logTable').style.display = 'table';
-
-                    // Generate Timestamp for the UI table
-                    const now = new Date();
-                    const timeString = now.toLocaleTimeString('en-US', { hour12: false });
-            
-                    const serviceBadgeClass = currentService === 'burn' ? 'badge burn' : 'badge';
+                    
+                    const timeString = new Date().toLocaleTimeString('en-US', { hour12: false });
                     const tbody = document.getElementById('logBody');
                     const row = document.createElement('tr');
+                    
+                    const serviceBadgeClass = currentService === 'burn' ? 'badge burn' : 'badge';
 
                     row.innerHTML = `
                         <td>${timeString}</td>
@@ -667,16 +682,11 @@
                         <td>$${rawPrice.toFixed(2)}</td>
                     `;
 
-                    // Insert new row at the top of the table
                     tbody.insertBefore(row, tbody.firstChild);
-
-                    recordCount++;
-                    document.getElementById('recordCount').textContent = `${recordCount} RECORD${recordCount !== 1 ? 'S' : ''}`;
-
                     resetForm();
                 } else {
-                    alert("Database Error: " + result.detail);
-                    btn.textContent = 'LOG SCREEN TO DATABASE'; // Reset button on failure
+                    alert("Database Error");
+                    btn.textContent = 'LOG SCREEN TO DATABASE';
                 }
             } catch (error) {
                 alert("Failed to connect to the backend API.");
@@ -689,7 +699,7 @@
             currentRating = 1;
             
             const display = document.getElementById('barcodeDisplay');
-            display.textContent = 'Awaiting scan...';
+            display.textContent = 'Ready to scan...';
             display.classList.remove('active');
             
             document.getElementById('emulsionSelect').disabled = true;
@@ -700,6 +710,14 @@
             btn.classList.remove('ready');
 
             setRating(1);
+            
+            // Unlock the scanner so it can read the next screen immediately
+            isScannerLocked = false; 
+            
+            // Scroll back to top on mobile
+            if(window.innerWidth <= 768) {
+                window.scrollTo({top: 0, behavior: 'smooth'});
+            }
         }
     </script>
 </body>
