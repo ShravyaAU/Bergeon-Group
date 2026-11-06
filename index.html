@@ -71,14 +71,21 @@
         .processing-fields.hidden { display: none; }
 
         @media (max-width: 768px) {
-            body { flex-direction: column; overflow-y: auto; }
-            .sidebar { width: 100%; flex-direction: row; height: 60px; border-right: none; border-bottom: 2px solid var(--black); }
+            /* Fix mobile display so table isn't cut off */
+            body { flex-direction: column; overflow-y: auto; min-height: 100vh; }
+            .sidebar { width: 100%; flex-direction: row; height: 60px; border-right: none; border-bottom: 2px solid var(--black); flex-shrink: 0; }
             .logo-area { height: 60px; border-bottom: none; border-right: 2px solid var(--black); padding: 10px; }
             .nav-links { display: none; }
-            .dashboard-container { flex-direction: column; overflow: visible; }
-            .intake-panel { width: 100%; border-right: none; border-bottom: 2px solid var(--black); overflow-y: visible; }
-            .log-panel { min-height: 400px; }
-            .log-table-container { overflow-x: auto; }
+            
+            .main-content { overflow: visible; height: auto; flex: none; }
+            .topbar { display: none; } 
+            
+            .dashboard-container { flex-direction: column; overflow: visible; height: auto; }
+            .intake-panel { width: 100%; border-right: none; border-bottom: 2px solid var(--black); overflow-y: visible; height: auto; }
+            
+            /* Ensure the log panel fully renders its height */
+            .log-panel { overflow: visible; height: auto; flex: none; padding-bottom: 40px; }
+            .log-table-container { overflow-x: auto; overflow-y: visible; }
         }
     </style>
 </head>
@@ -93,7 +100,7 @@
         <div class="dashboard-container">
             
             <div class="intake-panel">
-                <div class="scanner-container">
+                <div class="scanner-container" id="topOfPage">
                     <div id="reader"></div>
                     <div class="input-group">
                         <label>Manual Fallback Input</label>
@@ -190,9 +197,7 @@
             initScanner();
         });
 
-        // Formats database timestamp OR current browser time consistently
         function formatDateTime(dateString) {
-            // Append 'Z' to database timestamp so JS treats it as UTC, then converts to local
             const dateObj = typeof dateString === 'string' ? new Date(dateString + 'Z') : dateString;
             return dateObj.toLocaleString('en-US', {
                 month: 'short', day: 'numeric', 
@@ -268,7 +273,6 @@
             btn.textContent = 'LOG SCREEN TO DATABASE';
             btn.classList.add('ready');
 
-            // Force mobile to scroll down to the form
             if(window.innerWidth <= 768) {
                 setTimeout(() => {
                     document.getElementById('techName').scrollIntoView({behavior: "smooth", block: "start"});
@@ -338,7 +342,7 @@
                 service_type: service,
                 emulsion_type: emulsion,
                 difficulty_rating: rating,
-                estimated_cost: 0.0 // Hardcoded to 0
+                estimated_cost: 0.0
             };
 
             try {
@@ -375,8 +379,9 @@
             setRating(1);
             isScannerLocked = false; 
             
+            // Instantly auto-scroll to the top of the page when on mobile
             if(window.innerWidth <= 768) {
-                window.scrollTo({top: 0, behavior: 'smooth'});
+                window.scrollTo({top: 0, behavior: 'instant'});
             }
         }
     </script>
