@@ -195,7 +195,9 @@
         let isScannerLocked = false;
         let html5QrCode = null;
         let isCameraRunning = false;
-        let quaggaInitialized = false; 
+        let quaggaInitialized = false;
+        let detectionCount = {};
+        const REQUIRED_DETECTIONS = 3; 
 
         document.addEventListener("DOMContentLoaded", () => {
             fetchLogs();
@@ -281,10 +283,24 @@
                     target: document.querySelector('#reader'),
                     constraints: {
                         facingMode: "environment",
-                        width: 640,
-                        height: 480
+                        width: { min: 640, ideal: 1280, max: 1920 },
+                        height: { min: 480, ideal: 720, max: 1080 },
+                        aspectRatio: { min: 1, max: 2 },
+                        advanced: [{ focusMode: "continuous" }]
+                    },
+                    area: {
+                        top: "0%",
+                        right: "0%",
+                        left: "0%",
+                        bottom: "0%"
                     }
                 },
+                locator: {
+                    patchSize: "x-large",
+                    halfSample: true
+                },
+                numOfWorkers: 4,
+                frequency: 10,
                 decoder: {
                     readers: [
                         "ean_reader",
@@ -292,7 +308,13 @@
                         "upc_reader",
                         "code_128_reader",
                         "code_39_reader"
-                    ]
+                    ],
+                    debug: {
+                        drawBoundingBox: true,
+                        showFrequency: false,
+                        drawScanline: true,
+                        showPattern: false
+                    }
                 },
                 locate: true
             }, function(err) {
@@ -316,9 +338,31 @@
 
             Quagga.onDetected(function(result) {
                 const code = result.codeResult.code;
-                console.log("Barcode detected:", code);
+                const format = result.codeResult.format;
+                const confidence = result.codeResult.error;
+                console.log("Barcode detected:", code, "Format:", format, "Confidence:", confidence);
+                
                 if (!isScannerLocked) {
-                    onScanSuccess(code);
+                    // Count detections for each barcode
+                    if (!detectionCount[code]) {
+                        detectionCount[code] = 1;
+                    } else {
+                        detectionCount[code]++;
+                    }
+                    
+                    // Reset other barcode counts when a new one is detected
+                    Object.keys(detectionCount).forEach(key => {
+                        if (key !== code) {
+                            delete detectionCount[key];
+                        }
+                    });
+                    
+                    // Only accept if same barcode is detected multiple times
+                    if (detectionCount[code] >= REQUIRED_DETECTIONS) {
+                        console.log("Barcode confirmed:", code);
+                        onScanSuccess(code);
+                        detectionCount = {}; // Reset after successful scan
+                    }
                 }
             });
         }
@@ -444,6 +488,7 @@
         async function resetForm() {
             currentBarcode = null;
             currentRating = 1;
+            detectionCount = {}; // Reset detection count
             
             document.getElementById('barcodeDisplay').textContent = 'Ready to scan...';
             document.getElementById('barcodeDisplay').classList.remove('active');
