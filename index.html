@@ -237,15 +237,19 @@
 
         function initScanner() {
             const html5QrCode = new Html5Qrcode("reader");
+            
             html5QrCode.start(
                 { facingMode: "environment" }, 
                 { 
-                    fps: 10, 
-                    qrbox: { width: 250, height: 100 }
-                    // Removed the formatsToSupport restriction so it reads EVERYTHING
+                    fps: 10
+                    // The 'qrbox' and format limits have been entirely removed. 
+                    // The scanner will now use the full width of your phone screen 
+                    // to easily capture long 14-digit barcodes without cropping them.
                 },
                 (decodedText) => { if (!isScannerLocked) onScanSuccess(decodedText); },
-                (errorMessage) => {}
+                (errorMessage) => {
+                    // Ignore background scan failures
+                }
             ).catch(err => {
                 document.getElementById('reader').innerHTML = '<p style="color:white; padding:20px; text-align:center;">Camera access denied. Please use manual input.</p>';
             });
