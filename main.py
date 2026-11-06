@@ -1,6 +1,5 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import os
 import psycopg2
@@ -28,7 +27,7 @@ class ScreenLog(BaseModel):
     service_type: str
     emulsion_type: str
     difficulty_rating: int
-    estimated_cost: float
+    estimated_cost: float 
 
 @app.post("/api/intake")
 async def log_screen(log: ScreenLog):
@@ -48,7 +47,7 @@ async def log_screen(log: ScreenLog):
             log.service_type, 
             log.emulsion_type, 
             log.difficulty_rating, 
-            log.estimated_cost
+            0.0 # Hardcoded to 0 since cost is removed from UI
         ))
         
         result = cursor.fetchone()
@@ -67,11 +66,10 @@ async def get_logs():
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # Format the timestamp directly in SQL so it's easy for the frontend to read
+        # Send raw timestamp instead of TO_CHAR so frontend handles timezone
         cursor.execute("""
             SELECT 
-                TO_CHAR(scanned_at, 'HH24:MI:SS') as time,
-                barcode, action_type, technician_name, service_type, estimated_cost 
+                scanned_at, barcode, action_type, technician_name, service_type, emulsion_type 
             FROM screen_logs 
             ORDER BY scanned_at DESC LIMIT 50;
         """)

@@ -67,7 +67,6 @@
         .badge { padding: 4px 8px; font-size: 0.75rem; font-weight: 700; background-color: var(--asu-gold); color: var(--black); border: 1px solid var(--black); }
         .badge.return { background-color: var(--black); color: var(--white); }
 
-        /* Hide Processing details when returning */
         .processing-fields { transition: opacity 0.2s; }
         .processing-fields.hidden { display: none; }
 
@@ -107,10 +106,9 @@
 
                 <div class="section-header">
                     <span>Workflow Details</span>
-                    <span id="priceDisplay" style="color: var(--asu-gold);">$0.00</span>
                 </div>
 
-                <div class="form-container">
+                <div class="form-container" id="mainFormContainer">
                     <div class="input-group">
                         <label>Technician Name</label>
                         <input type="text" id="techName" class="text-input" placeholder="e.g., John Doe">
@@ -129,7 +127,6 @@
                         <div class="status-display" id="barcodeDisplay">Ready to scan...</div>
                     </div>
 
-                    <!-- Wrapped processing fields to hide on RETURN -->
                     <div id="processingFields" class="processing-fields">
                         <div class="input-group">
                             <label>Service Type</label>
@@ -168,11 +165,10 @@
                     <table class="data-table" id="logTable">
                         <thead>
                             <tr>
-                                <th>Time</th>
+                                <th>Date & Time</th>
                                 <th>Action</th>
                                 <th>Tech</th>
                                 <th>Barcode</th>
-                                <th>Cost</th>
                             </tr>
                         </thead>
                         <tbody id="logBody"></tbody>
@@ -188,19 +184,24 @@
         let currentService = 'reclaim';
         let currentRating = 1;
         let isScannerLocked = false; 
-        
-        const basePrices = { reclaim: 10, burn: 50 };
-        const difficultyMultipliers = [1, 1.2, 1.5, 1.8, 2];
 
-        // Fetch Live Database Logs on Load
         document.addEventListener("DOMContentLoaded", () => {
             fetchLogs();
             initScanner();
         });
 
+        // Formats database timestamp OR current browser time consistently
+        function formatDateTime(dateString) {
+            // Append 'Z' to database timestamp so JS treats it as UTC, then converts to local
+            const dateObj = typeof dateString === 'string' ? new Date(dateString + 'Z') : dateString;
+            return dateObj.toLocaleString('en-US', {
+                month: 'short', day: 'numeric', 
+                hour: 'numeric', minute: '2-digit'
+            });
+        }
+
         async function fetchLogs() {
             try {
-                // Ensure this is your live Render API URL
                 const response = await fetch('https://bergeon-group.onrender.com/api/logs');
                 const data = await response.json();
                 
@@ -208,17 +209,16 @@
                     document.getElementById('emptyState').style.display = 'none';
                     document.getElementById('logTable').style.display = 'table';
                     const tbody = document.getElementById('logBody');
-                    tbody.innerHTML = ''; // Clear loading state
+                    tbody.innerHTML = ''; 
                     
                     data.logs.forEach(log => {
                         const badgeClass = log.action_type === 'RETURN' ? 'badge return' : 'badge';
                         const row = document.createElement('tr');
                         row.innerHTML = `
-                            <td>${log.time}</td>
+                            <td>${formatDateTime(log.scanned_at)}</td>
                             <td><span class="${badgeClass}">${log.action_type}</span></td>
                             <td>${log.technician_name}</td>
                             <td><strong>${log.barcode}</strong></td>
-                            <td>$${log.estimated_cost}</td>
                         `;
                         tbody.appendChild(row);
                     });
@@ -234,12 +234,7 @@
             const html5QrCode = new Html5Qrcode("reader");
             html5QrCode.start(
                 { facingMode: "environment" }, 
-                {
-                    fps: 10,
-                    qrbox: { width: 250, height: 100 },
-                    // Force scanner to look for standard 1D barcodes used by label printers
-                    formatsToSupport: [ Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.CODE_39 ]
-                },
+                { fps: 10, qrbox: { width: 250, height: 100 }, formatsToSupport: [ Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.CODE_39 ] },
                 (decodedText) => { if (!isScannerLocked) onScanSuccess(decodedText); },
                 (errorMessage) => {}
             ).catch(err => {
@@ -273,7 +268,12 @@
             btn.textContent = 'LOG SCREEN TO DATABASE';
             btn.classList.add('ready');
 
-            updatePrice();
+            // Force mobile to scroll down to the form
+            if(window.innerWidth <= 768) {
+                setTimeout(() => {
+                    document.getElementById('techName').scrollIntoView({behavior: "smooth", block: "start"});
+                }, 100);
+            }
         }
 
         function setActionType(type) {
@@ -290,9 +290,8 @@
             } else {
                 btnReturn.classList.add('selected');
                 btnIntake.classList.remove('selected');
-                procFields.classList.add('hidden'); // Hide unneeded fields for Returns
+                procFields.classList.add('hidden');
             }
-            updatePrice();
         }
 
         function setService(type) {
@@ -304,7 +303,6 @@
                 document.getElementById('btnBurn').classList.add('selected');
                 document.getElementById('btnReclaim').classList.remove('selected');
             }
-            updatePrice();
         }
 
         function setRating(rating) {
@@ -314,19 +312,6 @@
                 if (index < rating) star.classList.add('active');
                 else star.classList.remove('active');
             });
-            updatePrice();
-        }
-
-        function updatePrice() {
-            if(!currentBarcode) return;
-            // Returns have $0 extra cost logic for this phase
-            if(currentAction === 'RETURN') {
-                document.getElementById('priceDisplay').textContent = `$0.00`;
-                return;
-            }
-            const base = basePrices[currentService];
-            const multiplier = difficultyMultipliers[currentRating - 1];
-            document.getElementById('priceDisplay').textContent = `$${(base * multiplier).toFixed(2)}`;
         }
 
         async function submitLog() {
@@ -339,13 +324,11 @@
             let emulsion = 'N/A';
             let rating = 0;
             let service = 'none';
-            let rawPrice = 0.00;
 
             if (currentAction === 'INTAKE') {
                 emulsion = document.getElementById('emulsionSelect').options[document.getElementById('emulsionSelect').selectedIndex].text;
                 rating = currentRating;
                 service = currentService;
-                rawPrice = parseFloat(document.getElementById('priceDisplay').textContent.replace('$', ''));
             }
 
             const payload = {
@@ -355,7 +338,7 @@
                 service_type: service,
                 emulsion_type: emulsion,
                 difficulty_rating: rating,
-                estimated_cost: rawPrice
+                estimated_cost: 0.0 // Hardcoded to 0
             };
 
             try {
@@ -366,7 +349,7 @@
                 });
 
                 if(response.ok) {
-                    fetchLogs(); // Re-sync table dynamically
+                    fetchLogs();
                     resetForm();
                 } else {
                     alert("Database Error");
@@ -384,8 +367,6 @@
             
             document.getElementById('barcodeDisplay').textContent = 'Ready to scan...';
             document.getElementById('barcodeDisplay').classList.remove('active');
-            
-            document.getElementById('priceDisplay').textContent = '$0.00';
             
             const btn = document.getElementById('submitBtn');
             btn.textContent = 'AWAITING SCAN...';
