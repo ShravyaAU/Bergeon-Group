@@ -7,6 +7,10 @@ from psycopg2.extras import RealDictCursor
 
 app = FastAPI(title="Bergeon Screen Intake API")
 
+@app.get("/")
+async def root():
+    return {"status": "online", "message": "Bergeon API is running"}
+
 # Allow your Vercel frontend to communicate with this Render backend
 app.add_middleware(
     CORSMiddleware,
