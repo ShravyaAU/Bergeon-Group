@@ -190,7 +190,9 @@
         let currentAction = 'INTAKE';
         let currentService = 'reclaim';
         let currentRating = 1;
-        let isScannerLocked = false; 
+        let isScannerLocked = false;
+        let html5QrCode = null;
+        let isCameraRunning = false; 
 
         document.addEventListener("DOMContentLoaded", () => {
             fetchLogs();
@@ -243,7 +245,7 @@
         }
 
         function initScanner() {
-            const html5QrCode = new Html5Qrcode("reader");
+            html5QrCode = new Html5Qrcode("reader");
             
             const cameraConfig = { 
                 facingMode: "environment",
@@ -257,8 +259,12 @@
                 { fps: 15 },
                 (decodedText) => { if (!isScannerLocked) onScanSuccess(decodedText); },
                 (errorMessage) => {}
-            ).catch(err => {
+            ).then(() => {
+                isCameraRunning = true;
+            }).catch(err => {
+                console.error("Camera error:", err);
                 document.getElementById('reader').innerHTML = '<p style="color:white; padding:20px; text-align:center;">Camera access denied. Please use manual input.</p>';
+                isCameraRunning = false;
             });
         }
 
@@ -380,7 +386,7 @@
             }
         }
 
-        function resetForm() {
+        async function resetForm() {
             currentBarcode = null;
             currentRating = 1;
             
@@ -392,7 +398,21 @@
             btn.classList.remove('ready');
 
             setRating(1);
-            isScannerLocked = false; 
+            isScannerLocked = false;
+
+            // Stop and restart the camera for continuous scanning
+            if (html5QrCode && isCameraRunning) {
+                try {
+                    await html5QrCode.stop();
+                    isCameraRunning = false;
+                    // Restart the scanner after a short delay
+                    setTimeout(() => {
+                        initScanner();
+                    }, 500);
+                } catch (err) {
+                    console.error("Error restarting scanner:", err);
+                }
+            }
             
             if(window.innerWidth <= 768) {
                 window.scrollTo({top: 0, behavior: 'instant'});
