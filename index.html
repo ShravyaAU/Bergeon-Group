@@ -237,33 +237,67 @@
             }
         }
 
-        function startCamera() {
-            // Hide the button and show the video feed box
-            document.getElementById('startCameraBtn').style.display = 'none';
-            document.getElementById('reader').style.display = 'block';
-            initScanner();
+        async function startCamera() {
+            // Check if browser supports getUserMedia
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                document.getElementById('reader').innerHTML = '<p style="color:white; padding:20px; text-align:center;">Browser not supported. Please use Chrome, Firefox, or Safari.</p>';
+                document.getElementById('reader').style.display = 'block';
+                document.getElementById('startCameraBtn').style.display = 'none';
+                return;
+            }
+
+            // Request camera permission first
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+                // Stop the test stream immediately
+                stream.getTracks().forEach(track => track.stop());
+                
+                // Hide the button and show the video feed box
+                document.getElementById('startCameraBtn').style.display = 'none';
+                document.getElementById('reader').style.display = 'block';
+                initScanner();
+            } catch (err) {
+                console.error("Permission error:", err);
+                document.getElementById('reader').innerHTML = `
+                    <p style="color:white; padding:20px; text-align:center; font-size:14px;">
+                        Camera permission denied.<br><br>
+                        Please allow camera access in your browser settings<br>
+                        and refresh the page to try again.
+                    </p>`;
+                document.getElementById('reader').style.display = 'block';
+                document.getElementById('startCameraBtn').style.display = 'none';
+            }
         }
 
         function initScanner() {
             html5QrCode = new Html5Qrcode("reader");
             
+            // Simplified camera config for better compatibility
             const cameraConfig = { 
-                facingMode: "environment",
-                width: { min: 1280, ideal: 1920 },
-                height: { min: 720, ideal: 1080 },
-                advanced: [{ focusMode: "continuous" }]
+                facingMode: "environment"
             };
+
+            const config = { fps: 10, qrbox: { width: 250, height: 250 } };
 
             html5QrCode.start(
                 cameraConfig, 
-                { fps: 15 },
+                config,
                 (decodedText) => { if (!isScannerLocked) onScanSuccess(decodedText); },
                 (errorMessage) => {}
             ).then(() => {
                 isCameraRunning = true;
+                console.log("Camera started successfully");
             }).catch(err => {
                 console.error("Camera error:", err);
-                document.getElementById('reader').innerHTML = '<p style="color:white; padding:20px; text-align:center;">Camera access denied. Please use manual input.</p>';
+                const errorMsg = err?.message || err || "Unknown error";
+                document.getElementById('reader').innerHTML = `
+                    <p style="color:white; padding:20px; text-align:center; font-size:14px;">
+                        Camera error: ${errorMsg}<br><br>
+                        Please ensure:<br>
+                        1. Camera permissions are allowed<br>
+                        2. You're using HTTPS or localhost<br>
+                        3. Camera is not in use by another app
+                    </p>`;
                 isCameraRunning = false;
             });
         }
