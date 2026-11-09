@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bergeon Group | Screen Tracker</title>
-    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <script src="https://unpkg.com/@zxing/library@latest" type="text/javascript"></script>
     <style>
         :root {
             --asu-gold: #FFC627; --black: #000000; --cream: #FDFCE9; 
@@ -192,7 +192,7 @@
         let currentService = 'reclaim';
         let currentRating = 1;
         let isScannerLocked = false;
-        let html5QrCode = null;
+        let codeReader = null;
         let isCameraRunning = false; 
 
         document.addEventListener("DOMContentLoaded", () => {
@@ -271,40 +271,14 @@
         }
 
         function initScanner() {
-            html5QrCode = new Html5Qrcode("reader");
+            codeReader = new ZXing.BrowserMultiFormatReader();
             
-            const cameraConfig = { 
-                facingMode: "environment",
-                width: { ideal: 1920 },
-                height: { ideal: 1080 }
-            };
-
-            html5QrCode.start(
-                cameraConfig, 
-                { 
-                    fps: 10, // A stable frame rate gives the decoder time to process the image
-                    // Explicitly tell the scanner to look for standard 1D barcode formats
-                    formatsToSupport: [
-                        Html5QrcodeSupportedFormats.CODE_128,
-                        Html5QrcodeSupportedFormats.CODE_39,
-                        Html5QrcodeSupportedFormats.EAN_8,
-                        Html5QrcodeSupportedFormats.EAN_13,
-                        Html5QrcodeSupportedFormats.ITF
-                    ]
-                    // Removed the qrbox: It will now scan the entire screen for barcodes
-                    // Removed experimental native detector: Relies on the stable web-decoder instead
-                },
-                (decodedText) => { 
-                    // Lowered the filter to 4 characters so it catches shorter valid barcodes
-                    if (decodedText.trim().length < 4) return;
-                    
-                    console.log("Scanned:", decodedText);
-                    if (!isScannerLocked) onScanSuccess(decodedText.trim()); 
-                },
-                (errorMessage) => {
-                    // Silently ignore frames without barcodes
+            codeReader.decodeFromVideoDevice(null, 'reader', (result, err) => {
+                if (result && !isScannerLocked) {
+                    console.log("Scanned:", result.text);
+                    onScanSuccess(result.text);
                 }
-            ).then(() => {
+            }).then(() => {
                 isCameraRunning = true;
                 console.log("Camera started successfully");
             }).catch(err => {
@@ -450,10 +424,10 @@
             setRating(1);
             isScannerLocked = false;
 
-            // Stop and restart scanner for continuous scanning
-            if (html5QrCode && isCameraRunning) {
+            // Stop and restart ZXing scanner for continuous scanning
+            if (codeReader && isCameraRunning) {
                 try {
-                    await html5QrCode.stop();
+                    await codeReader.reset();
                     isCameraRunning = false;
                     // Restart the scanner after a short delay
                     setTimeout(() => {
