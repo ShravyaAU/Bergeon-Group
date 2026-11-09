@@ -277,15 +277,27 @@
                 facingMode: "environment"
             };
 
-            // Use default configuration to detect all supported formats
             html5QrCode.start(
                 cameraConfig, 
-                { fps: 10 },
+                { 
+                    fps: 15, // Faster frame rate
+                    qrbox: { width: 300, height: 100 }, // Wide targeting box for 1D barcodes
+                    experimentalFeatures: {
+                        useBarCodeDetectorIfSupported: true // Uses phone's native hardware scanner for better accuracy
+                    }
+                },
                 (decodedText) => { 
+                    // FILTER: Ignore false positives/shadows that result in tiny numbers
+                    if (decodedText.length < 8) {
+                        return; 
+                    }
+
                     console.log("Scanned:", decodedText);
                     if (!isScannerLocked) onScanSuccess(decodedText); 
                 },
-                (errorMessage) => {}
+                (errorMessage) => {
+                    // Silent ignore of frames that don't have a barcode
+                }
             ).then(() => {
                 isCameraRunning = true;
                 console.log("Camera started successfully");
