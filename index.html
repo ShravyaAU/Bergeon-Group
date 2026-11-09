@@ -271,13 +271,64 @@
         }
 
         function initScanner() {
+            // Try native BarcodeDetector API first (more accurate)
+            if ('BarcodeDetector' in window) {
+                initBarcodeDetector();
+            } else {
+                // Fallback to html5-qrcode
+                initHtml5QrCode();
+            }
+        }
+
+        function initBarcodeDetector() {
+            const video = document.createElement('video');
+            video.style.width = '100%';
+            video.style.height = 'auto';
+            document.getElementById('reader').innerHTML = '';
+            document.getElementById('reader').appendChild(video);
+
+            navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: "environment" } 
+            }).then(stream => {
+                video.srcObject = stream;
+                video.play();
+                isCameraRunning = true;
+                console.log("BarcodeDetector camera started");
+                
+                const detector = new BarcodeDetector({ 
+                    formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39', 'qr_code'] 
+                });
+                
+                detectBarcodes(detector, video);
+            }).catch(err => {
+                console.error("Camera error:", err);
+                document.getElementById('reader').innerHTML = '<p style="color:white; padding:20px; text-align:center;">Camera error. Please use manual input.</p>';
+            });
+        }
+
+        function detectBarcodes(detector, video) {
+            if (!isCameraRunning) return;
+            
+            detector.detect(video).then(barcodes => {
+                if (barcodes.length > 0 && !isScannerLocked) {
+                    const code = barcodes[0].rawValue;
+                    console.log("Barcode detected:", code);
+                    onScanSuccess(code);
+                }
+            }).catch(err => {
+                console.error("Detection error:", err);
+            });
+            
+            requestAnimationFrame(() => detectBarcodes(detector, video));
+        }
+
+        function initHtml5QrCode() {
             html5QrCode = new Html5Qrcode("reader");
             
             const cameraConfig = { 
                 facingMode: "environment"
             };
 
-            // Configure for all barcode types including linear barcodes
             const config = { 
                 fps: 10,
                 formatsToSupport: [
@@ -449,10 +500,18 @@
             setRating(1);
             isScannerLocked = false;
 
-            // Stop and restart html5-qrcode for continuous scanning
-            if (html5QrCode && isCameraRunning) {
+            // Stop and restart scanner for continuous scanning
+            if (isCameraRunning) {
                 try {
-                    await html5QrCode.stop();
+                    if (html5QrCode) {
+                        await html5QrCode.stop();
+                    } else {
+                        // Stop video stream for BarcodeDetector
+                        const video = document.querySelector('#reader video');
+                        if (video && video.srcObject) {
+                            video.srcObject.getTracks().forEach(track => track.stop());
+                        }
+                    }
                     isCameraRunning = false;
                     // Restart the scanner after a short delay
                     setTimeout(() => {
