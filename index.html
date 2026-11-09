@@ -271,80 +271,16 @@
         }
 
         function initScanner() {
-            // Try native BarcodeDetector API first (more accurate)
-            if ('BarcodeDetector' in window) {
-                initBarcodeDetector();
-            } else {
-                // Fallback to html5-qrcode
-                initHtml5QrCode();
-            }
-        }
-
-        function initBarcodeDetector() {
-            const video = document.createElement('video');
-            video.style.width = '100%';
-            video.style.height = 'auto';
-            document.getElementById('reader').innerHTML = '';
-            document.getElementById('reader').appendChild(video);
-
-            navigator.mediaDevices.getUserMedia({ 
-                video: { facingMode: "environment" } 
-            }).then(stream => {
-                video.srcObject = stream;
-                video.play();
-                isCameraRunning = true;
-                console.log("BarcodeDetector camera started");
-                
-                const detector = new BarcodeDetector({ 
-                    formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39', 'qr_code'] 
-                });
-                
-                detectBarcodes(detector, video);
-            }).catch(err => {
-                console.error("Camera error:", err);
-                document.getElementById('reader').innerHTML = '<p style="color:white; padding:20px; text-align:center;">Camera error. Please use manual input.</p>';
-            });
-        }
-
-        function detectBarcodes(detector, video) {
-            if (!isCameraRunning) return;
-            
-            detector.detect(video).then(barcodes => {
-                if (barcodes.length > 0 && !isScannerLocked) {
-                    const code = barcodes[0].rawValue;
-                    console.log("Barcode detected:", code);
-                    onScanSuccess(code);
-                }
-            }).catch(err => {
-                console.error("Detection error:", err);
-            });
-            
-            requestAnimationFrame(() => detectBarcodes(detector, video));
-        }
-
-        function initHtml5QrCode() {
             html5QrCode = new Html5Qrcode("reader");
             
             const cameraConfig = { 
                 facingMode: "environment"
             };
 
-            const config = { 
-                fps: 10,
-                formatsToSupport: [
-                    Html5QrcodeSupportedFormats.EAN_13,
-                    Html5QrcodeSupportedFormats.EAN_8,
-                    Html5QrcodeSupportedFormats.UPC_A,
-                    Html5QrcodeSupportedFormats.UPC_E,
-                    Html5QrcodeSupportedFormats.CODE_128,
-                    Html5QrcodeSupportedFormats.CODE_39,
-                    Html5QrcodeSupportedFormats.QR_CODE
-                ]
-            };
-
+            // Use default configuration to detect all supported formats
             html5QrCode.start(
                 cameraConfig, 
-                config,
+                { fps: 10 },
                 (decodedText) => { 
                     console.log("Scanned:", decodedText);
                     if (!isScannerLocked) onScanSuccess(decodedText); 
@@ -355,10 +291,9 @@
                 console.log("Camera started successfully");
             }).catch(err => {
                 console.error("Camera error:", err);
-                const errorMsg = err?.message || err || "Unknown error";
                 document.getElementById('reader').innerHTML = `
                     <p style="color:white; padding:20px; text-align:center; font-size:14px;">
-                        Camera error: ${errorMsg}<br><br>
+                        Camera error: ${err?.message || err}<br><br>
                         Please ensure:<br>
                         1. Camera permissions are allowed<br>
                         2. You're using HTTPS or localhost<br>
@@ -501,17 +436,9 @@
             isScannerLocked = false;
 
             // Stop and restart scanner for continuous scanning
-            if (isCameraRunning) {
+            if (html5QrCode && isCameraRunning) {
                 try {
-                    if (html5QrCode) {
-                        await html5QrCode.stop();
-                    } else {
-                        // Stop video stream for BarcodeDetector
-                        const video = document.querySelector('#reader video');
-                        if (video && video.srcObject) {
-                            video.srcObject.getTracks().forEach(track => track.stop());
-                        }
-                    }
+                    await html5QrCode.stop();
                     isCameraRunning = false;
                     // Restart the scanner after a short delay
                     setTimeout(() => {
