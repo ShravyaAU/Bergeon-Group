@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bergeon Group | Screen Tracker</title>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-    <script src="https://unpkg.com/quagga@0.12.1/dist/quagga.min.js" type="text/javascript"></script>
     <style>
         :root {
             --asu-gold: #FFC627; --black: #000000; --cream: #FDFCE9; 
@@ -194,10 +193,7 @@
         let currentRating = 1;
         let isScannerLocked = false;
         let html5QrCode = null;
-        let isCameraRunning = false;
-        let quaggaInitialized = false;
-        let detectionCount = {};
-        const REQUIRED_DETECTIONS = 2; 
+        let isCameraRunning = false; 
 
         document.addEventListener("DOMContentLoaded", () => {
             fetchLogs();
@@ -275,76 +271,49 @@
         }
 
         function initScanner() {
-            // Use Quagga for better linear barcode support (UPC, EAN, Code128, etc.)
-            Quagga.init({
-                inputStream: {
-                    name: "Live",
-                    type: "LiveStream",
-                    target: document.querySelector('#reader'),
-                    constraints: {
-                        facingMode: "environment",
-                        width: { min: 640, ideal: 1280, max: 1920 },
-                        height: { min: 480, ideal: 720, max: 1080 },
-                        aspectRatio: { min: 1, max: 2 },
-                        advanced: [{ focusMode: "continuous" }]
-                    },
-                    area: {
-                        top: "0%",
-                        right: "0%",
-                        left: "0%",
-                        bottom: "0%"
-                    }
-                },
-                locator: {
-                    patchSize: "x-large",
-                    halfSample: true
-                },
-                numOfWorkers: 4,
-                frequency: 10,
-                decoder: {
-                    readers: [
-                        "ean_reader",
-                        "ean_8_reader",
-                        "upc_reader",
-                        "code_128_reader",
-                        "code_39_reader"
-                    ],
-                    debug: {
-                        drawBoundingBox: true,
-                        showFrequency: false,
-                        drawScanline: true,
-                        showPattern: false
-                    }
-                },
-                locate: true
-            }, function(err) {
-                if (err) {
-                    console.error("Quagga init error:", err);
-                    document.getElementById('reader').innerHTML = `
-                        <p style="color:white; padding:20px; text-align:center; font-size:14px;">
-                            Camera error: ${err}<br><br>
-                            Please ensure:<br>
-                            1. Camera permissions are allowed<br>
-                            2. You're using HTTPS or localhost<br>
-                            3. Camera is not in use by another app
-                        </p>`;
-                    return;
-                }
-                console.log("Initialization finished. Ready to start");
-                Quagga.start();
-                isCameraRunning = true;
-                quaggaInitialized = true;
-            });
+            html5QrCode = new Html5Qrcode("reader");
+            
+            const cameraConfig = { 
+                facingMode: "environment"
+            };
 
-            Quagga.onDetected(function(result) {
-                const code = result.codeResult.code;
-                const format = result.codeResult.format;
-                const confidence = result.codeResult.error;
-                console.log("Barcode detected:", code, "Format:", format, "Confidence:", confidence);
-                
-                if (!isScannerLocked) {
-                    onScanSuccess(code);
-                }
+            // Configure for all barcode types including linear barcodes
+            const config = { 
+                fps: 10,
+                formatsToSupport: [
+                    Html5QrcodeSupportedFormats.EAN_13,
+                    Html5QrcodeSupportedFormats.EAN_8,
+                    Html5QrcodeSupportedFormats.UPC_A,
+                    Html5QrcodeSupportedFormats.UPC_E,
+                    Html5QrcodeSupportedFormats.CODE_128,
+                    Html5QrcodeSupportedFormats.CODE_39,
+                    Html5QrcodeSupportedFormats.QR_CODE
+                ]
+            };
+
+            html5QrCode.start(
+                cameraConfig, 
+                config,
+                (decodedText) => { 
+                    console.log("Scanned:", decodedText);
+                    if (!isScannerLocked) onScanSuccess(decodedText); 
+                },
+                (errorMessage) => {}
+            ).then(() => {
+                isCameraRunning = true;
+                console.log("Camera started successfully");
+            }).catch(err => {
+                console.error("Camera error:", err);
+                const errorMsg = err?.message || err || "Unknown error";
+                document.getElementById('reader').innerHTML = `
+                    <p style="color:white; padding:20px; text-align:center; font-size:14px;">
+                        Camera error: ${errorMsg}<br><br>
+                        Please ensure:<br>
+                        1. Camera permissions are allowed<br>
+                        2. You're using HTTPS or localhost<br>
+                        3. Camera is not in use by another app
+                    </p>`;
+                isCameraRunning = false;
             });
         }
 
@@ -469,7 +438,6 @@
         async function resetForm() {
             currentBarcode = null;
             currentRating = 1;
-            detectionCount = {}; // Reset detection count
             
             document.getElementById('barcodeDisplay').textContent = 'Ready to scan...';
             document.getElementById('barcodeDisplay').classList.remove('active');
@@ -481,12 +449,11 @@
             setRating(1);
             isScannerLocked = false;
 
-            // Stop and restart Quagga for continuous scanning
-            if (quaggaInitialized && isCameraRunning) {
+            // Stop and restart html5-qrcode for continuous scanning
+            if (html5QrCode && isCameraRunning) {
                 try {
-                    Quagga.stop();
+                    await html5QrCode.stop();
                     isCameraRunning = false;
-                    quaggaInitialized = false;
                     // Restart the scanner after a short delay
                     setTimeout(() => {
                         initScanner();
