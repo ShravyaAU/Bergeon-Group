@@ -197,7 +197,7 @@
         let isCameraRunning = false;
         let quaggaInitialized = false;
         let detectionCount = {};
-        const REQUIRED_DETECTIONS = 3; 
+        const REQUIRED_DETECTIONS = 2; 
 
         document.addEventListener("DOMContentLoaded", () => {
             fetchLogs();
@@ -343,26 +343,7 @@
                 console.log("Barcode detected:", code, "Format:", format, "Confidence:", confidence);
                 
                 if (!isScannerLocked) {
-                    // Count detections for each barcode
-                    if (!detectionCount[code]) {
-                        detectionCount[code] = 1;
-                    } else {
-                        detectionCount[code]++;
-                    }
-                    
-                    // Reset other barcode counts when a new one is detected
-                    Object.keys(detectionCount).forEach(key => {
-                        if (key !== code) {
-                            delete detectionCount[key];
-                        }
-                    });
-                    
-                    // Only accept if same barcode is detected multiple times
-                    if (detectionCount[code] >= REQUIRED_DETECTIONS) {
-                        console.log("Barcode confirmed:", code);
-                        onScanSuccess(code);
-                        detectionCount = {}; // Reset after successful scan
-                    }
+                    onScanSuccess(code);
                 }
             });
         }
