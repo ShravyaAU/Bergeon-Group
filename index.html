@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bergeon Group | Screen Tracker</title>
-    <script src="https://unpkg.com/@zxing/library@latest" type="text/javascript"></script>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <style>
         :root {
             --asu-gold: #FFC627; --black: #000000; --cream: #FDFCE9; 
@@ -192,7 +192,7 @@
         let currentService = 'reclaim';
         let currentRating = 1;
         let isScannerLocked = false;
-        let codeReader = null;
+        let html5QrCode = null;
         let isCameraRunning = false; 
 
         document.addEventListener("DOMContentLoaded", () => {
@@ -271,14 +271,21 @@
         }
 
         function initScanner() {
-            codeReader = new ZXing.BrowserMultiFormatReader();
+            html5QrCode = new Html5Qrcode("reader");
             
-            codeReader.decodeFromVideoDevice(null, 'reader', (result, err) => {
-                if (result && !isScannerLocked) {
-                    console.log("Scanned:", result.text);
-                    onScanSuccess(result.text);
+            html5QrCode.start(
+                { facingMode: "environment" },
+                { fps: 10 },
+                (decodedText, decodedResult) => {
+                    console.log("Scanned:", decodedText, "Format:", decodedResult?.result?.format?.formatName);
+                    if (!isScannerLocked) {
+                        onScanSuccess(decodedText);
+                    }
+                },
+                (errorMessage) => {
+                    // Silent error handling
                 }
-            }).then(() => {
+            ).then(() => {
                 isCameraRunning = true;
                 console.log("Camera started successfully");
             }).catch(err => {
@@ -424,10 +431,10 @@
             setRating(1);
             isScannerLocked = false;
 
-            // Stop and restart ZXing scanner for continuous scanning
-            if (codeReader && isCameraRunning) {
+            // Stop and restart html5-qrcode for continuous scanning
+            if (html5QrCode && isCameraRunning) {
                 try {
-                    await codeReader.reset();
+                    await html5QrCode.stop();
                     isCameraRunning = false;
                     // Restart the scanner after a short delay
                     setTimeout(() => {
