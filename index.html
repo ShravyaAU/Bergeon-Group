@@ -103,6 +103,9 @@
                     
                     <div id="reader"></div>
                     
+                    <!-- Status display for debugging -->
+                    <div id="debugStatus" style="background: #333; color: #fff; padding: 10px; font-size: 12px; font-family: monospace; margin-top: 10px; display: none;"></div>
+                    
                     <div class="input-group">
                         <label>Manual Fallback Input</label>
                         <div class="barcode-input-wrapper">
@@ -271,29 +274,51 @@
         }
 
         function initScanner() {
+            const debugStatus = document.getElementById('debugStatus');
+            debugStatus.style.display = 'block';
+            debugStatus.textContent = 'Initializing scanner...';
+            
             html5QrCode = new Html5Qrcode("reader");
+            
+            const config = {
+                fps: 10,
+                formatsToSupport: [
+                    Html5QrcodeSupportedFormats.EAN_13,
+                    Html5QrcodeSupportedFormats.EAN_8,
+                    Html5QrcodeSupportedFormats.UPC_A,
+                    Html5QrcodeSupportedFormats.UPC_E,
+                    Html5QrcodeSupportedFormats.CODE_128,
+                    Html5QrcodeSupportedFormats.CODE_39,
+                    Html5QrcodeSupportedFormats.CODE_93,
+                    Html5QrcodeSupportedFormats.CODABAR,
+                    Html5QrcodeSupportedFormats.ITF,
+                    Html5QrcodeSupportedFormats.QR_CODE
+                ]
+            };
             
             html5QrCode.start(
                 { facingMode: "environment" },
-                { fps: 10 },
+                config,
                 (decodedText, decodedResult) => {
-                    console.log("Scanned:", decodedText, "Format:", decodedResult?.result?.format?.formatName);
+                    debugStatus.textContent = `Scanned: ${decodedText}`;
+                    console.log("Scanned:", decodedText);
                     if (!isScannerLocked) {
                         onScanSuccess(decodedText);
                     }
                 },
                 (errorMessage) => {
-                    // Silent error handling
+                    debugStatus.textContent = `Scanning...`;
                 }
             ).then(() => {
                 isCameraRunning = true;
+                debugStatus.textContent = 'Camera started - Point at barcode';
                 console.log("Camera started successfully");
             }).catch(err => {
                 console.error("Camera error:", err);
+                debugStatus.textContent = `Error: ${err?.message || err}`;
                 document.getElementById('reader').innerHTML = `
                     <p style="color:white; padding:20px; text-align:center; font-size:14px;">
-                        Camera error: ${err?.message || err}<br><br>
-                        Please check camera permissions and refresh.
+                        Camera error: ${err?.message || err}
                     </p>`;
                 isCameraRunning = false;
             });
